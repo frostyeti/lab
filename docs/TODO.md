@@ -59,6 +59,9 @@ This document contains a curated list of Docker Compose applications that are hi
 - **Pastebins (e.g., Hastebin / Microbin / Pastefy)**: Open-source text and code-snippet sharing.
 - **RSS Reader (e.g., FreshRSS / Miniflux)**: Self-hosted RSS feed readers for staying up-to-date with news and blogs.
 
+## Source Control & CI/CD
+- **GitLab**: Web-based DevOps lifecycle tool that provides a Git-repository manager providing wiki, issue-tracking and CI/CD pipeline features.
+
 ## Security Scanning & Pen-Testing
 - **Greenbone / OpenVAS**: Open-source vulnerability scanning and management system.
 - **DefectDojo**: Open-source vulnerability management tool that streamlines the testing process.
