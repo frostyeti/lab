@@ -6,6 +6,26 @@ This document contains a curated list of Docker Compose applications that are hi
 - **Home Assistant**: Open-source home automation platform that puts local control and privacy first.
 - **Node-RED**: Flow-based programming for the Internet of Things, wiring together hardware devices, APIs, and online services.
 - **Nextcloud**: Self-hosted productivity platform for file synchronization, sharing, and collaboration.
+- **Bind9**: Open-source DNS software system.
+- **External-DNS**: Synchronize exposed Kubernetes Services and Ingresses with DNS providers (applicable to Swarm/Compose).
+- **Ofelia**: A docker job scheduler (cron alternative).
+- **Docker-Crontab**: A simple crontab for Docker containers.
+- **Gotify**: A simple server for sending and receiving messages in real-time.
+- **Chrony**: Versatile implementation of the Network Time Protocol (NTP).
+
+## Monitoring & Observability
+- **Uptime Kuma**: A self-hosted monitoring tool like "Uptime Robot".
+- **cAdvisor**: Analyzes resource usage and performance characteristics of running containers.
+- **Vigil**: Microservices Status Page & Monitoring system.
+- **Gatus**: Automated developer-oriented status page.
+- **Peekaping**: A simple status page.
+- **InfluxDB**: Time series database for monitoring and analytics.
+- **Graphite**: Enterprise-scale monitoring tool.
+- **Zipkin**: Distributed tracing system.
+- **SigNoz**: Open-source observability platform (APM, logs, traces).
+
+## Media & Photos
+- **Immich**: High performance self-hosted photo and video management solution.
 
 ## Search, Data & Analytics
 - **Meilisearch**: Lightning-fast, open-source search engine.
