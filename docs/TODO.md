@@ -31,6 +31,9 @@ This document contains a curated list of Docker Compose applications that are hi
 - **Meilisearch**: Lightning-fast, open-source search engine.
 - **Elasticsearch**: Distributed, RESTful search and analytics engine.
 
+## Database Management
+- **CloudBeaver**: Web-based cloud database GUI management tool supporting multiple databases.
+
 ## Identity & Access Management (IAM)
 - **Authentik**: Open-source Identity Provider that emphasizes flexibility and versatility.
 - **Keycloak**: Open-source identity and access management solution.
