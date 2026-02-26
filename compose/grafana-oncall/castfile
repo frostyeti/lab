@@ -1,0 +1,17 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "grafana-oncall"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold grafana-oncall dirs"
+    uses: shell
+    run: |
+      mkdir -p ${MNT_DIR}/data/grafana-oncall

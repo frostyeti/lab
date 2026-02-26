@@ -1,0 +1,22 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "loki"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold loki dirs"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/data/loki
+      mkdir -p ${MNT_DIR}/etc/loki
+      if [ ! -f "${MNT_DIR}/etc/loki/loki.yml" ]; then
+        cp ./default/etc/loki.yml ${MNT_DIR}/etc/loki/loki.yml
+        echo "Copied loki.yml"
+      fi

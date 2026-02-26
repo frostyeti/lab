@@ -1,0 +1,43 @@
+services:
+  consul:
+    image: hashicorp/consul:${TAG:-latest}
+    container_name: consul
+    restart: unless-stopped
+    ports:
+      - "${CONSUL_HTTP_PORT:-8500}:8500"
+      - "8600:8600/udp"
+      - "8600:8600/tcp"
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+    volumes:
+      - ${MNT_DIR}/data/consul:/consul/data
+      - ${MNT_DIR}/etc/consul:/consul/config
+    command: >
+      consul agent -server -bootstrap-expect=1
+      -ui -client=0.0.0.0
+      -data-dir=/consul/data
+      -config-dir=/consul/config
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.consul.rule: "Host(`${CONSUL_HOST:-consul.local}`)"
+      traefik.http.routers.consul.entrypoints: "websecure"
+      traefik.http.routers.consul.tls: "true"
+      traefik.http.routers.consul.tls.certresolver: "letsencrypt"
+      traefik.http.services.consul.loadbalancer.server.port: "8500"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: ""
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

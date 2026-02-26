@@ -1,0 +1,25 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:${TAG:-2022-latest}
+    container_name: mssql
+    restart: unless-stopped
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: ${MSSQL_SA_PASSWORD:-YourStrong@Passw0rd}
+      MSSQL_PID: ${MSSQL_PID:-Developer}
+    volumes:
+      - ${MNT_DIR}/data/mssql:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${MSSQL_SA_PASSWORD:-YourStrong@Passw0rd}\" -No -Q \"SELECT 1\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-backend:
+    external: true

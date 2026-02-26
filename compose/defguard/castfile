@@ -1,0 +1,18 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "defguard"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold defguard config dirs"
+    uses: shell
+    run: |
+      mkdir -p ${MNT_DIR}/data/defguard
+      mkdir -p ${MNT_DIR}/etc/defguard

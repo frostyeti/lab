@@ -1,0 +1,13 @@
+#!/bin/bash
+# Load test vault and environment
+
+export HOMELAB_ENV=test
+export KPV_VAULT=test
+
+# Export vault secrets as environment variables
+if command -v kpv &> /dev/null; then
+  eval "$(kpv env --vault test)"
+fi
+
+echo "export HOMELAB_ENV=test"
+echo "export KPV_VAULT=test"

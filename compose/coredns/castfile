@@ -1,0 +1,20 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "coredns"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold config dirs"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/etc/coredns
+      if [ ! -f "${MNT_DIR}/etc/coredns/Corefile" ]; then
+        cp ./default/etc/Corefile ${MNT_DIR}/etc/coredns/Corefile
+      fi

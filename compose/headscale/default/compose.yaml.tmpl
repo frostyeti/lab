@@ -1,0 +1,75 @@
+services:
+  headscale:
+    image: headscale/headscale:${TAG:-latest}
+    container_name: headscale
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    ports:
+      - "${HEADSCALE_PORT:-8085}:8080"
+      - "9090:9090"  # metrics
+    command: serve
+    environment:
+      HEADSCALE_LOG_LEVEL: info
+    volumes:
+      - ${MNT_DIR}/etc/headscale:/etc/headscale
+      - ${MNT_DIR}/data/headscale:/var/lib/headscale
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/metrics"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.headscale.rule: "Host(`${HEADSCALE_HOST:-headscale.local}`)"
+      traefik.http.routers.headscale.entrypoints: "websecure"
+      traefik.http.routers.headscale.tls: "true"
+      traefik.http.routers.headscale.tls.certresolver: "letsencrypt"
+      traefik.http.services.headscale.loadbalancer.server.port: "8080"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+  headscale-ui:
+    image: ghcr.io/gurucomputing/headscale-ui:${UI_TAG:-latest}
+    container_name: headscale-ui
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    ports:
+      - "${HEADSCALE_UI_PORT:-8086}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.headscale-ui.rule: "Host(`${HEADSCALE_UI_HOST:-headscale-ui.local}`)"
+      traefik.http.routers.headscale-ui.entrypoints: "websecure"
+      traefik.http.routers.headscale-ui.tls: "true"
+      traefik.http.routers.headscale-ui.tls.certresolver: "letsencrypt"
+      traefik.http.services.headscale-ui.loadbalancer.server.port: "80"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 80}}"
+    networks:
+      - vnet-frontend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

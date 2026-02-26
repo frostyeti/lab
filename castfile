@@ -1,0 +1,47 @@
+config:
+  dotenv: [".env"]
+  env:
+    HOMELAB_ENV: "${HOMELAB_ENV:-default}"
+    KPV_VAULT: "${KPV_VAULT:-default}"
+
+includes:
+  - compose/castfile
+  - setup/castfile
+
+tasks:
+  env:
+    desc: "Show current environment configuration"
+    uses: shell
+    run: |
+      echo "HOMELAB_ENV: ${HOMELAB_ENV}"
+      echo "KPV_VAULT: ${KPV_VAULT}"
+  
+  use:prod:
+    desc: "Switch to production environment and vault"
+    uses: shell
+    run: |
+      export HOMELAB_ENV=prod
+      export KPV_VAULT=prod
+      echo "Switched to production environment"
+      echo "Run: eval $(cast @eng script load-prod)"
+  
+  use:test:
+    desc: "Switch to test environment and vault"
+    uses: shell
+    run: |
+      export HOMELAB_ENV=test
+      export KPV_VAULT=test
+      echo "Switched to test environment"
+      echo "Run: eval $(cast @eng script load-test)"
+  
+  use:default:
+    desc: "Switch to default environment"
+    uses: shell
+    run: |
+      export HOMELAB_ENV=default
+      export KPV_VAULT=default
+      echo "Switched to default environment"
+
+modules:
+  eng:
+    path: eng

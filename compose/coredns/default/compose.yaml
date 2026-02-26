@@ -1,0 +1,17 @@
+services:
+  coredns:
+    image: coredns/coredns:${TAG:-latest}
+    container_name: coredns
+    restart: unless-stopped
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - ${MNT_DIR}/etc/coredns:/etc/coredns
+    command: ["-conf", "/etc/coredns/Corefile"]
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-backend:
+    external: true

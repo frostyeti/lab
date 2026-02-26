@@ -1,0 +1,6 @@
+hosts:
+  test-server:
+    host: 10.0.0.2
+    user: deploy
+    tags: [test]
+    identity_file: ~/.ssh/id_ed25519

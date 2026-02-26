@@ -1,0 +1,22 @@
+services:
+  redis:
+    image: redis:${TAG:-7-alpine}
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ${MNT_DIR}/data/redis:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-backend:
+    external: true

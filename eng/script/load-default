@@ -1,0 +1,13 @@
+#!/bin/bash
+# Load default vault and environment
+
+export HOMELAB_ENV=default
+export KPV_VAULT=default
+
+# Export vault secrets as environment variables (if kpv is available)
+if command -v kpv &> /dev/null; then
+  eval "$(kpv env --vault default 2>/dev/null || true)"
+fi
+
+echo "export HOMELAB_ENV=default"
+echo "export KPV_VAULT=default"

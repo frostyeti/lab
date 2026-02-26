@@ -1,0 +1,18 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "temporal"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold temporal dirs"
+    uses: shell
+    run: |
+      mkdir -p ${MNT_DIR}/data/temporal
+      mkdir -p ${MNT_DIR}/etc/temporal

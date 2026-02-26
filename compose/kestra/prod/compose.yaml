@@ -1,0 +1,82 @@
+services:
+  kestra-db:
+    image: postgres:${DB_TAG:-16-alpine}
+    container_name: kestra-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${KESTRA_DB_USER:-kestra}
+      POSTGRES_PASSWORD: ${KESTRA_DB_PASSWORD:-kestra}
+      POSTGRES_DB: ${KESTRA_DB_NAME:-kestra}
+    volumes:
+      - ${MNT_DIR}/data/kestra/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KESTRA_DB_USER:-kestra}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - vnet-backend
+
+  kestra:
+    image: kestra/kestra:${TAG:-latest}
+    container_name: kestra
+    restart: unless-stopped
+    depends_on:
+      kestra-db:
+        condition: service_healthy
+    ports:
+      - "${KESTRA_PORT:-8080}:8080"
+      - "8081:8081"
+    command: server standalone
+    environment:
+      KESTRA_CONFIGURATION: |
+        datasources:
+          postgres:
+            url: jdbc:postgresql://kestra-db:5432/${KESTRA_DB_NAME:-kestra}
+            driverClassName: org.postgresql.Driver
+            username: ${KESTRA_DB_USER:-kestra}
+            password: ${KESTRA_DB_PASSWORD:-kestra}
+        kestra:
+          server:
+            basic-auth:
+              enabled: false
+          repository:
+            type: postgres
+          storage:
+            type: local
+            local:
+              base-path: /app/storage
+          queue:
+            type: postgres
+          tasks:
+            tmp-dir:
+              path: /tmp/kestra-wd/tmp
+    volumes:
+      - ${MNT_DIR}/data/kestra/storage:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /tmp/kestra-wd:/tmp/kestra-wd
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.kestra.rule: "Host(`${KESTRA_HOST:-kestra.local}`)"
+      traefik.http.routers.kestra.entrypoints: "websecure"
+      traefik.http.routers.kestra.tls: "true"
+      traefik.http.routers.kestra.tls.certresolver: "letsencrypt"
+      traefik.http.services.kestra.loadbalancer.server.port: "8080"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: ""
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

@@ -1,0 +1,59 @@
+services:
+  dashy:
+    image: lissy93/dashy:${TAG:-latest}
+    container_name: dashy
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    # Expose port directly only when PROXY_TYPE is not set (standalone dev mode).
+    # When behind traefik or caddy-docker-proxy the port binding is omitted and
+    # routing is handled entirely by proxy labels below.
+    ports:
+      - "${DASHY_PORT:-4000}:8080"
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ${MNT_DIR}/etc/dashy/conf.yml:/app/public/conf.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+    # ── Traefik labels (active when traefik is the PROXY_TYPE) ──────────────
+    # Zero-downtime is achieved via the healthcheck: Traefik only routes to a
+    # container once it is healthy, so rolling `docker compose up -d` will
+    # start the new container, wait for it to pass its healthcheck, then drain
+    # and remove the old one without dropping requests.
+    labels:
+      # Traefik
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.dashy.rule: "Host(`${DASHY_HOST:-dashy.local}`)"
+      traefik.http.routers.dashy.entrypoints: "websecure"
+      traefik.http.routers.dashy.tls: "true"
+      traefik.http.routers.dashy.tls.certresolver: "letsencrypt"
+      traefik.http.services.dashy.loadbalancer.server.port: "8080"
+      traefik.http.services.dashy.loadbalancer.healthcheck.path: "/"
+      traefik.http.services.dashy.loadbalancer.healthcheck.interval: "10s"
+      # Caddy docker-proxy
+      # caddy-docker-proxy reads these labels and hot-reloads caddy config with
+      # zero downtime on every Docker event (container start/stop/update).
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+
+    networks:
+      - vnet-frontend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true

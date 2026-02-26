@@ -1,0 +1,61 @@
+services:
+  rustdesk-server:
+    image: rustdesk/rustdesk-server:${TAG:-latest}
+    container_name: rustdesk-hbbs
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    ports:
+      - "21115:21115"
+      - "21116:21116"
+      - "21116:21116/udp"
+      - "21118:21118"
+    command: hbbs -r ${RUSTDESK_HOST:-rustdesk.local}:21117
+    volumes:
+      - ${MNT_DIR}/data/rustdesk:/root
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 21116 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+  rustdesk-relay:
+    image: rustdesk/rustdesk-server:${TAG:-latest}
+    container_name: rustdesk-hbbr
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    ports:
+      - "21117:21117"
+      - "21119:21119"
+    command: hbbr
+    volumes:
+      - ${MNT_DIR}/data/rustdesk:/root
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 21117 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

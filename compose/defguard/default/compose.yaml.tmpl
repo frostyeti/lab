@@ -1,0 +1,110 @@
+services:
+  defguard-db:
+    image: postgres:${DB_TAG:-16-alpine}
+    container_name: defguard-db
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      POSTGRES_USER: ${DEFGUARD_DB_USER:-defguard}
+      POSTGRES_PASSWORD: ${DEFGUARD_DB_PASSWORD:-defguard}
+      POSTGRES_DB: ${DEFGUARD_DB_NAME:-defguard}
+    volumes:
+      - ${MNT_DIR}/data/defguard/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DEFGUARD_DB_USER:-defguard} -d ${DEFGUARD_DB_NAME:-defguard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - vnet-backend
+
+  defguard:
+    image: ghcr.io/defguard/defguard:${TAG:-latest}
+    container_name: defguard
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    depends_on:
+      defguard-db:
+        condition: service_healthy
+    ports:
+      - "${DEFGUARD_PORT:-8000}:8000"
+      - "50055:50055"  # gRPC for gateway
+    environment:
+      DEFGUARD_DB_HOST: defguard-db
+      DEFGUARD_DB_PORT: 5432
+      DEFGUARD_DB_USER: ${DEFGUARD_DB_USER:-defguard}
+      DEFGUARD_DB_PASSWORD: ${DEFGUARD_DB_PASSWORD:-defguard}
+      DEFGUARD_DB_NAME: ${DEFGUARD_DB_NAME:-defguard}
+      DEFGUARD_SECRET_KEY: ${DEFGUARD_SECRET_KEY:-changemeinproduction}
+      DEFGUARD_URL: ${DEFGUARD_URL:-http://localhost:8000}
+      DEFGUARD_LOG_LEVEL: info
+    volumes:
+      - ${MNT_DIR}/data/defguard/core:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.defguard.rule: "Host(`${DEFGUARD_HOST:-defguard.local}`)"
+      traefik.http.routers.defguard.entrypoints: "websecure"
+      traefik.http.routers.defguard.tls: "true"
+      traefik.http.routers.defguard.tls.certresolver: "letsencrypt"
+      traefik.http.services.defguard.loadbalancer.server.port: "8000"
+      traefik.http.services.defguard.loadbalancer.healthcheck.path: "/api/v1/health"
+      traefik.http.services.defguard.loadbalancer.healthcheck.interval: "10s"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 8000}}"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+  defguard-gateway:
+    image: ghcr.io/defguard/gateway:${GATEWAY_TAG:-latest}
+    container_name: defguard-gateway
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    depends_on:
+      defguard:
+        condition: service_healthy
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+    ports:
+      - "51820:51820/udp"
+    environment:
+      DEFGUARD_GRPC_URL: defguard:50055
+      DEFGUARD_TOKEN: ${DEFGUARD_GATEWAY_TOKEN:-changeme}
+      DEFGUARD_USERSPACE: ${DEFGUARD_USERSPACE:-false}
+    healthcheck:
+      test: ["CMD-SHELL", "wg show | grep -q interface || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

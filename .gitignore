@@ -1,0 +1,24 @@
+# Local mount directory (bind-mount data, never commit)
+compose/.mnt/
+**/.mnt/
+
+# User overrides for .env files (personal settings, never commit)
+**/.env.user
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# KeePass vault files (keep outside repo; managed by kpv)
+*.kdbx
+*.key
+
+# Secrets / env overrides
+*.secret
+.env.local
+.env.*.local
+lab/
+master/

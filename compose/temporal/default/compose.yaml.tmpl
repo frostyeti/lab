@@ -1,0 +1,98 @@
+services:
+  temporal-db:
+    image: postgres:${DB_TAG:-16-alpine}
+    container_name: temporal-db
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      POSTGRES_USER: ${TEMPORAL_DB_USER:-temporal}
+      POSTGRES_PASSWORD: ${TEMPORAL_DB_PASSWORD:-temporal}
+      POSTGRES_DB: ${TEMPORAL_DB_NAME:-temporal}
+    volumes:
+      - ${MNT_DIR}/data/temporal/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEMPORAL_DB_USER:-temporal}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - vnet-backend
+
+  temporal:
+    image: temporalio/auto-setup:${TAG:-latest}
+    container_name: temporal
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    depends_on:
+      temporal-db:
+        condition: service_healthy
+    ports:
+      - "${TEMPORAL_PORT:-7233}:7233"
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: ${TEMPORAL_DB_USER:-temporal}
+      POSTGRES_PWD: ${TEMPORAL_DB_PASSWORD:-temporal}
+      POSTGRES_SEEDS: temporal-db
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+    volumes:
+      - ${MNT_DIR}/etc/temporal:/etc/temporal/config/dynamicconfig
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "localhost:7233", "cluster", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+  temporal-ui:
+    image: temporalio/ui:${UI_TAG:-latest}
+    container_name: temporal-ui
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    depends_on:
+      temporal:
+        condition: service_healthy
+    ports:
+      - "${TEMPORAL_UI_PORT:-8233}:8080"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: "http://localhost:${TEMPORAL_UI_PORT:-8233}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.temporal.rule: "Host(`${TEMPORAL_HOST:-temporal.local}`)"
+      traefik.http.routers.temporal.entrypoints: "websecure"
+      traefik.http.routers.temporal.tls: "true"
+      traefik.http.routers.temporal.tls.certresolver: "letsencrypt"
+      traefik.http.services.temporal.loadbalancer.server.port: "8080"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

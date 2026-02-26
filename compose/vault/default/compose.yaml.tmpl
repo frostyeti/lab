@@ -1,0 +1,77 @@
+services:
+  vault:
+    image: hashicorp/vault:${TAG:-latest}
+    container_name: vault
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    ports:
+      - "${VAULT_PORT:-8200}:8200"
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+      VAULT_API_ADDR: "http://0.0.0.0:8200"
+      VAULT_CLUSTER_ADDR: "http://0.0.0.0:8201"
+    volumes:
+      - ${MNT_DIR}/etc/vault/vault.hcl:/vault/config/vault.hcl:ro
+      - ${MNT_DIR}/data/vault:/vault/data
+      - ${MNT_DIR}/log/vault:/vault/logs
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.hcl
+    healthcheck:
+      test: ["CMD-SHELL", "vault status -address=http://127.0.0.1:8200 2>&1 | grep -E '(Initialized|Sealed)' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.vault.rule: "Host(`${VAULT_HOST:-vault.local}`)"
+      traefik.http.routers.vault.entrypoints: "websecure"
+      traefik.http.routers.vault.tls: "true"
+      traefik.http.routers.vault.tls.certresolver: "letsencrypt"
+      traefik.http.services.vault.loadbalancer.server.port: "8200"
+      traefik.http.services.vault.loadbalancer.healthcheck.path: "/v1/sys/health"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 8200}}"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+  # Auto-unseal sidecar: waits for Vault to be initialized, then unseals it.
+  # On first run Vault must be initialized manually:
+  #   docker exec vault vault operator init
+  # Then store the unseal keys and root token in kpv, and set VAULT_UNSEAL_KEY_* vars.
+  # This container runs until vault is unsealed, then exits cleanly.
+  vault-unseal:
+    image: hashicorp/vault:${TAG:-latest}
+    container_name: vault-unseal
+    restart: on-failure
+    depends_on:
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_UNSEAL_KEY_1: ${VAULT_UNSEAL_KEY_1:-}
+      VAULT_UNSEAL_KEY_2: ${VAULT_UNSEAL_KEY_2:-}
+      VAULT_UNSEAL_KEY_3: ${VAULT_UNSEAL_KEY_3:-}
+    volumes:
+      - ${MNT_DIR}/etc/vault/unseal.sh:/unseal.sh:ro
+    command: sh /unseal.sh
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

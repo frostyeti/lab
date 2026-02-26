@@ -1,0 +1,124 @@
+services:
+  # ── Database ────────────────────────────────────────────────────────────
+  oncall-db:
+    image: postgres:${DB_TAG:-16-alpine}
+    container_name: oncall-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${ONCALL_DB_NAME:-oncall}
+      POSTGRES_USER:     ${ONCALL_DB_USER:-oncall}
+      POSTGRES_PASSWORD: ${ONCALL_DB_PASSWORD:-oncall}
+    volumes:
+      - ${MNT_DIR}/data/oncall-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ONCALL_DB_USER:-oncall} -d ${ONCALL_DB_NAME:-oncall}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - vnet-backend
+
+  # ── Redis (broker + cache) ──────────────────────────────────────────────
+  oncall-redis:
+    image: redis:${REDIS_TAG:-7-alpine}
+    container_name: oncall-redis
+    restart: unless-stopped
+    volumes:
+      - ${MNT_DIR}/data/oncall-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - vnet-backend
+
+  # ── Grafana OnCall API / web ────────────────────────────────────────────
+  oncall:
+    image: grafana/oncall:${TAG:-latest}
+    container_name: oncall
+    restart: unless-stopped
+    ports:
+      - "${ONCALL_PORT:-8080}:8080"
+    command: uwsgi --ini uwsgi.ini
+    environment:
+      BASE_URL:                  "${ONCALL_BASE_URL:-http://oncall.local}"
+      SECRET_KEY:                "${ONCALL_SECRET_KEY:-changeme-replace-with-random-64-char-string}"
+      ALLOWED_HOSTS:             "*"
+      DATABASE_TYPE:             postgresql
+      DATABASE_HOST:             oncall-db
+      DATABASE_PORT:             5432
+      DATABASE_NAME:             ${ONCALL_DB_NAME:-oncall}
+      DATABASE_USER:             ${ONCALL_DB_USER:-oncall}
+      DATABASE_PASSWORD:         ${ONCALL_DB_PASSWORD:-oncall}
+      BROKER_TYPE:               redis
+      REDIS_URI:                 redis://oncall-redis:6379/0
+      DJANGO_SETTINGS_MODULE:    settings.hobby
+      CELERY_WORKER_BEAT_ENABLED: "True"
+      GRAFANA_API_URL:           "${GRAFANA_API_URL:-http://grafana:3000}"
+    volumes:
+      - ${MNT_DIR}/data/oncall:/var/lib/oncall
+    depends_on:
+      oncall-db:
+        condition: service_healthy
+      oncall-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.oncall.rule: "Host(`${ONCALL_HOST:-oncall.local}`)"
+      traefik.http.routers.oncall.entrypoints: "websecure"
+      traefik.http.routers.oncall.tls: "true"
+      traefik.http.routers.oncall.tls.certresolver: "letsencrypt"
+      traefik.http.services.oncall.loadbalancer.server.port: "8080"
+      traefik.http.services.oncall.loadbalancer.healthcheck.path: "/health/"
+      traefik.http.services.oncall.loadbalancer.healthcheck.interval: "10s"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: ""
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+  # ── Celery worker ───────────────────────────────────────────────────────
+  oncall-worker:
+    image: grafana/oncall:${TAG:-latest}
+    container_name: oncall-worker
+    restart: unless-stopped
+    command: ./celery_with_exporter.sh
+    environment:
+      DATABASE_TYPE:     postgresql
+      DATABASE_HOST:     oncall-db
+      DATABASE_PORT:     5432
+      DATABASE_NAME:     ${ONCALL_DB_NAME:-oncall}
+      DATABASE_USER:     ${ONCALL_DB_USER:-oncall}
+      DATABASE_PASSWORD: ${ONCALL_DB_PASSWORD:-oncall}
+      BROKER_TYPE:       redis
+      REDIS_URI:         redis://oncall-redis:6379/0
+      SECRET_KEY:        "${ONCALL_SECRET_KEY:-changeme-replace-with-random-64-char-string}"
+      DJANGO_SETTINGS_MODULE: settings.hobby
+    volumes:
+      - ${MNT_DIR}/data/oncall:/var/lib/oncall
+    depends_on:
+      oncall:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A engine inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

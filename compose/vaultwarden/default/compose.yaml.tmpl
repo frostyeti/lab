@@ -1,0 +1,53 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:${TAG:-latest}
+    container_name: vaultwarden
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    ports:
+      - "${VAULTWARDEN_PORT:-8888}:80"
+    environment:
+      DOMAIN: "https://${VAULTWARDEN_HOST:-vault.local}"
+      SIGNUPS_ALLOWED: "${VAULTWARDEN_SIGNUPS:-false}"
+      ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN:-changeme}
+      WEBSOCKET_ENABLED: "true"
+      LOG_LEVEL: warn
+    volumes:
+      - ${MNT_DIR}/data/vaultwarden:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/alive"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.vaultwarden.rule: "Host(`${VAULTWARDEN_HOST:-vw.local}`)"
+      traefik.http.routers.vaultwarden.entrypoints: "websecure"
+      traefik.http.routers.vaultwarden.tls: "true"
+      traefik.http.routers.vaultwarden.tls.certresolver: "letsencrypt"
+      traefik.http.services.vaultwarden.loadbalancer.server.port: "80"
+      traefik.http.services.vaultwarden.loadbalancer.healthcheck.path: "/alive"
+      # WebSocket for live sync
+      traefik.http.routers.vaultwarden-ws.rule: "Host(`${VAULTWARDEN_HOST:-vw.local}`) && Path(`/notifications/hub`)"
+      traefik.http.routers.vaultwarden-ws.entrypoints: "websecure"
+      traefik.http.routers.vaultwarden-ws.tls: "true"
+      traefik.http.services.vaultwarden-ws.loadbalancer.server.port: "3012"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 80}}"
+    networks:
+      - vnet-frontend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true

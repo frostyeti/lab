@@ -1,0 +1,52 @@
+tasks:
+  up:
+    desc: "Create docker networks for homelab"
+    uses: bash
+    run: |
+      echo "Creating docker networks..."
+
+      if ! docker network ls --format '{{.Name}}' | grep -q "^vnet-frontend$"; then
+        docker network create \
+          --driver bridge \
+          --subnet=172.20.0.0/16 \
+          --gateway=172.20.0.1 \
+          --opt com.docker.network.bridge.name=vnet-frontend \
+          vnet-frontend
+        echo "Created vnet-frontend (172.20.0.0/16)"
+      else
+        echo "vnet-frontend already exists"
+      fi
+
+      if ! docker network ls --format '{{.Name}}' | grep -q "^vnet-backend$"; then
+        docker network create \
+          --driver bridge \
+          --subnet=172.21.0.0/17 \
+          --gateway=172.21.0.1 \
+          --opt com.docker.network.bridge.name=vnet-backend \
+          vnet-backend
+        echo "Created vnet-backend (172.21.0.0/17)"
+      else
+        echo "vnet-backend already exists"
+      fi
+
+      echo "Networks ready."
+
+  down:
+    desc: "Remove homelab docker networks"
+    uses: shell
+    run: |
+      echo "Removing docker networks..."
+      docker network rm vnet-frontend 2>/dev/null && echo "Removed vnet-frontend" || echo "vnet-frontend not found"
+      docker network rm vnet-backend  2>/dev/null && echo "Removed vnet-backend"  || echo "vnet-backend not found"
+
+  status:
+    desc: "Show homelab network status"
+    uses: bash
+    run: |
+      echo "=== Homelab Networks ==="
+      docker network ls --format 'table {{.Name}}\t{{.Driver}}\t{{.Scope}}' | grep -E "(NAME|vnet-)" || echo "No homelab networks found"
+      echo ""
+      for net in vnet-frontend vnet-backend; do
+        echo "--- $net ---"
+        docker network inspect $net --format 'Subnet: {{range .IPAM.Config}}{{.Subnet}}{{end}}  Gateway: {{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null || echo "Network not found"
+      done

@@ -1,0 +1,69 @@
+services:
+  pangolin:
+    image: fosrl/pangolin:${TAG:-latest}
+    container_name: pangolin
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    ports:
+      - "${PANGOLIN_PORT:-3001}:3001"
+      - "7844:7844/udp"  # WireGuard tunnel port
+      - "7844:7844/tcp"  # TCP fallback
+    volumes:
+      - ${MNT_DIR}/etc/pangolin:/app/config
+      - ${MNT_DIR}/data/pangolin:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/v1/auth/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.pangolin.rule: "Host(`${PANGOLIN_HOST:-pangolin.local}`)"
+      traefik.http.routers.pangolin.entrypoints: "websecure"
+      traefik.http.routers.pangolin.tls: "true"
+      traefik.http.routers.pangolin.tls.certresolver: "letsencrypt"
+      traefik.http.services.pangolin.loadbalancer.server.port: "3001"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 3001}}"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+  gerbil:
+    image: fosrl/gerbil:${GERBIL_TAG:-latest}
+    container_name: gerbil
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+    environment:
+      PANGOLIN_ENDPOINT: ${PANGOLIN_HOST:-pangolin.local}
+    healthcheck:
+      test: ["CMD-SHELL", "wg show | grep -q interface || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

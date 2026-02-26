@@ -1,0 +1,6 @@
+hosts:
+  prod-server:
+    host: 10.0.0.1
+    user: deploy
+    tags: [prod]
+    identity_file: ~/.ssh/id_ed25519

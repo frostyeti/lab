@@ -1,0 +1,33 @@
+tasks:
+  load-prod:
+    desc: "Load production vault environment variables"
+    uses: shell
+    run: |
+      cat << 'EOF'
+      export HOMELAB_ENV=prod
+      export KPV_VAULT=prod
+      EOF
+      if command -v kpv &> /dev/null; then
+        kpv env --vault prod 2>/dev/null || true
+      fi
+  
+  load-test:
+    desc: "Load test vault environment variables"
+    uses: shell
+    run: |
+      cat << 'EOF'
+      export HOMELAB_ENV=test
+      export KPV_VAULT=test
+      EOF
+      if command -v kpv &> /dev/null; then
+        kpv env --vault test 2>/dev/null || true
+      fi
+  
+  load-default:
+    desc: "Load default vault environment variables"
+    uses: shell
+    run: |
+      cat << 'EOF'
+      export HOMELAB_ENV=default
+      export KPV_VAULT=default
+      EOF

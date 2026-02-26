@@ -1,0 +1,19 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "grafana"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold grafana dirs"
+    uses: shell
+    run: |
+      mkdir -p ${MNT_DIR}/data/grafana
+      mkdir -p ${MNT_DIR}/etc/grafana/provisioning/datasources
+      mkdir -p ${MNT_DIR}/etc/grafana/provisioning/dashboards

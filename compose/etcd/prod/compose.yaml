@@ -1,0 +1,33 @@
+services:
+  etcd:
+    image: bitnami/etcd:${TAG:-latest}
+    container_name: etcd
+    restart: unless-stopped
+    ports:
+      - "${ETCD_CLIENT_PORT:-2379}:2379"
+      - "2380:2380"
+    environment:
+      ETCD_NAME: etcd0
+      ETCD_DATA_DIR: /bitnami/etcd/data
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+      ETCD_LISTEN_PEER_URLS: "http://0.0.0.0:2380"
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: "http://etcd:2380"
+      ETCD_INITIAL_CLUSTER: "etcd0=http://etcd:2380"
+      ETCD_INITIAL_CLUSTER_STATE: new
+      ETCD_INITIAL_CLUSTER_TOKEN: homelab-etcd
+      ALLOW_NONE_AUTHENTICATION: "yes"
+    volumes:
+      - ${MNT_DIR}/data/etcd:/bitnami/etcd/data
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health", "--endpoints=http://localhost:2379"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-backend:
+    external: true

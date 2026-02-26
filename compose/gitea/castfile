@@ -1,0 +1,18 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "gitea"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold gitea dirs"
+    uses: shell
+    run: |
+      mkdir -p ${MNT_DIR}/data/gitea
+      mkdir -p ${MNT_DIR}/etc/gitea

@@ -1,0 +1,79 @@
+services:
+  filerun-db:
+    image: mariadb:${DB_TAG:-10.11}
+    container_name: filerun-db
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${FILERUN_DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${FILERUN_DB_NAME:-filerun}
+      MYSQL_USER: ${FILERUN_DB_USER:-filerun}
+      MYSQL_PASSWORD: ${FILERUN_DB_PASSWORD:-filerun}
+    volumes:
+      - ${MNT_DIR}/data/filerun/db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${FILERUN_DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - vnet-backend
+
+  filerun:
+    image: filerun/filerun:${TAG:-latest}
+    container_name: filerun
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    depends_on:
+      filerun-db:
+        condition: service_healthy
+    ports:
+      - "${FILERUN_PORT:-8090}:80"
+    environment:
+      FR_DB_HOST: filerun-db
+      FR_DB_PORT: 3306
+      FR_DB_NAME: ${FILERUN_DB_NAME:-filerun}
+      FR_DB_USER: ${FILERUN_DB_USER:-filerun}
+      FR_DB_PASS: ${FILERUN_DB_PASSWORD:-filerun}
+      APACHE_RUN_USER: www-data
+      APACHE_RUN_GROUP: www-data
+      APPLICATION_URL: "http://${FILERUN_HOST:-files.local}"
+    volumes:
+      - ${MNT_DIR}/data/filerun/html:/var/www/html
+      - ${MNT_DIR}/data/filerun/user-files:/user-files
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.filerun.rule: "Host(`${FILERUN_HOST:-files.local}`)"
+      traefik.http.routers.filerun.entrypoints: "websecure"
+      traefik.http.routers.filerun.tls: "true"
+      traefik.http.routers.filerun.tls.certresolver: "letsencrypt"
+      traefik.http.services.filerun.loadbalancer.server.port: "80"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 80}}"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

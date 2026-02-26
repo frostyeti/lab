@@ -1,0 +1,23 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "vault"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold vault config dirs and default config"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/data/vault
+      mkdir -p ${MNT_DIR}/etc/vault
+      mkdir -p ${MNT_DIR}/log/vault
+      if [ ! -f "${MNT_DIR}/etc/vault/vault.hcl" ]; then
+        cp ./default/etc/vault.hcl ${MNT_DIR}/etc/vault/vault.hcl
+        echo "Copied vault.hcl to ${MNT_DIR}/etc/vault/"
+      fi

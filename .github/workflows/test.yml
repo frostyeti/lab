@@ -1,0 +1,42 @@
+name: Compose Services Test Suite
+
+on:
+  pull_request:
+    paths:
+      - 'compose/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Setup Docker-in-Docker Swarm Context
+        run: bash compose/scripts/setup-dind-swarm.sh
+
+      - name: Run Test Suite
+        id: run-tests
+        run: deno run -A compose/scripts/test.ts
+
+      - name: Trigger AI Auto-fix on Failure
+        if: failure() && steps.run-tests.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // This triggers a repository_dispatch event to run the ai-autofix.yml workflow
+            await github.rest.repos.createDispatchEvent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              event_type: 'trigger-ai-autofix',
+              client_payload: {
+                pr_number: context.issue.number,
+                run_id: context.runId,
+                sha: context.sha
+              }
+            });

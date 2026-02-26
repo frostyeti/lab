@@ -1,0 +1,99 @@
+services:
+  windmill-db:
+    image: postgres:${DB_TAG:-16-alpine}
+    container_name: windmill-db
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      POSTGRES_USER: ${WINDMILL_DB_USER:-windmill}
+      POSTGRES_PASSWORD: ${WINDMILL_DB_PASSWORD:-windmill}
+      POSTGRES_DB: ${WINDMILL_DB_NAME:-windmill}
+    volumes:
+      - ${MNT_DIR}/data/windmill/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${WINDMILL_DB_USER:-windmill}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - vnet-backend
+
+  windmill-server:
+    image: ghcr.io/windmill-labs/windmill:${TAG:-main}
+    container_name: windmill-server
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    depends_on:
+      windmill-db:
+        condition: service_healthy
+    ports:
+      - "${WINDMILL_PORT:-8300}:8000"
+    environment:
+      DATABASE_URL: "postgres://${WINDMILL_DB_USER:-windmill}:${WINDMILL_DB_PASSWORD:-windmill}@windmill-db:5432/${WINDMILL_DB_NAME:-windmill}?sslmode=disable"
+      MODE: server
+      BASE_URL: "${WINDMILL_PROTOCOL:-http}://${WINDMILL_HOST:-windmill.local}"
+      JSON_FMT: "true"
+    volumes:
+      - ${MNT_DIR}/data/windmill/server:/tmp/windmill/cache
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.windmill.rule: "Host(`${WINDMILL_HOST:-windmill.local}`)"
+      traefik.http.routers.windmill.entrypoints: "websecure"
+      traefik.http.routers.windmill.tls: "true"
+      traefik.http.routers.windmill.tls.certresolver: "letsencrypt"
+      traefik.http.services.windmill.loadbalancer.server.port: "8000"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 8000}}"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+  windmill-worker:
+    image: ghcr.io/windmill-labs/windmill:${TAG:-main}
+    container_name: windmill-worker
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    depends_on:
+      windmill-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://${WINDMILL_DB_USER:-windmill}:${WINDMILL_DB_PASSWORD:-windmill}@windmill-db:5432/${WINDMILL_DB_NAME:-windmill}?sslmode=disable"
+      MODE: worker
+      WORKER_GROUP: default
+      NUM_WORKERS: ${WINDMILL_WORKERS:-2}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${MNT_DIR}/data/windmill/worker:/tmp/windmill
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep windmill || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

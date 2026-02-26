@@ -1,0 +1,13 @@
+#!/bin/bash
+# Load production vault and environment
+
+export HOMELAB_ENV=prod
+export KPV_VAULT=prod
+
+# Export vault secrets as environment variables
+if command -v kpv &> /dev/null; then
+  eval "$(kpv env --vault prod)"
+fi
+
+echo "export HOMELAB_ENV=prod"
+echo "export KPV_VAULT=prod"

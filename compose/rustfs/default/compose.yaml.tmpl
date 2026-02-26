@@ -1,0 +1,56 @@
+services:
+  rustfs:
+    image: rustfs/rustfs:${TAG:-latest}
+    container_name: rustfs
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    ports:
+      - "${RUSTFS_PORT:-9000}:9000"
+      - "${RUSTFS_CONSOLE_PORT:-9001}:9001"
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-minioadmin}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-minioadmin}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+    volumes:
+      - ${MNT_DIR}/data/rustfs:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      traefik.enable: "${TRAEFIK_ENABLE:-false}"
+      traefik.http.routers.rustfs.rule: "Host(`${RUSTFS_HOST:-rustfs.local}`)"
+      traefik.http.routers.rustfs.entrypoints: "websecure"
+      traefik.http.routers.rustfs.tls: "true"
+      traefik.http.routers.rustfs.tls.certresolver: "letsencrypt"
+      traefik.http.services.rustfs.loadbalancer.server.port: "9000"
+      traefik.http.routers.rustfs-console.rule: "Host(`${RUSTFS_CONSOLE_HOST:-rustfs-console.local}`)"
+      traefik.http.routers.rustfs-console.entrypoints: "websecure"
+      traefik.http.routers.rustfs-console.tls: "true"
+      traefik.http.services.rustfs-console.loadbalancer.server.port: "9001"
+      caddy: "${CADDY_ENABLE:-false}"
+      caddy.reverse_proxy: "{{upstreams 9000}}"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

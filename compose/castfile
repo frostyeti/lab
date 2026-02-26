@@ -1,0 +1,342 @@
+tasks:
+  # ── kpv vault initialisation ────────────────────────────────────────────
+  # Creates the default homelab KeePass vault if it doesn't already exist.
+  # The generated password is stored in the OS keyring automatically.
+  # Run once after cloning the repo: cast @compose init
+  init:
+    desc: "Initialise the default kpv vault for homelab secrets"
+    uses: shell
+    run: |
+      echo "Initialising kpv default vault..."
+      kpv init --vault homelab --global
+      echo ""
+      echo "Vault ready. Secrets will be created on first 'cast @compose up'."
+      echo "To view all secrets: kpv secrets ls"
+
+  # ── List all homelab secrets ────────────────────────────────────────────
+  secrets:ls:
+    desc: "List all secrets stored in the homelab kpv vault"
+    uses: shell
+    run: |
+      kpv --vault homelab secrets ls
+
+  # ── Export secrets for backup ───────────────────────────────────────────
+  secrets:export:
+    desc: "Export all homelab secrets to JSON (stdout)"
+    uses: shell
+    run: |
+      kpv --vault homelab secrets export --json --pretty
+
+modules:
+  setup:
+    path: ./setup
+
+  # ── Reverse proxies ─────────────────────────────────────────────────────
+  traefik:
+    path: ./traefik
+  caddy:
+    path: ./caddy
+  coredns:
+    path: ./coredns
+
+  # ── Databases ───────────────────────────────────────────────────────────
+  postgres:
+    path: ./postgres
+  redis:
+    path: ./redis
+  mssql:
+    path: ./mssql
+  mysql:
+    path: ./mysql
+
+  # ── Messaging ───────────────────────────────────────────────────────────
+  rabbitmq:
+    path: ./rabbitmq
+
+  # ── Dashboards / UI ─────────────────────────────────────────────────────
+  dashy:
+    path: ./dashy
+
+  # ── Secrets & identity ──────────────────────────────────────────────────
+  vault:
+    path: ./vault
+  consul:
+    path: ./consul
+  vaultwarden:
+    path: ./vaultwarden
+
+  # ── VPN / networking ────────────────────────────────────────────────────
+  wireguard:
+    path: ./wireguard
+  defguard:
+    path: ./defguard
+  headscale:
+    path: ./headscale
+  pangolin:
+    path: ./pangolin
+
+  # ── Dev tooling ─────────────────────────────────────────────────────────
+  code-server:
+    path: ./code-server
+  gitea:
+    path: ./gitea
+  etcd:
+    path: ./etcd
+
+  # ── Workflow / automation ───────────────────────────────────────────────
+  n8n:
+    path: ./n8n
+  windmill:
+    path: ./windmill
+  temporal:
+    path: ./temporal
+  kestra:
+    path: ./kestra
+
+  # ── Storage ─────────────────────────────────────────────────────────────
+  rustfs:
+    path: ./rustfs
+  filerun:
+    path: ./filerun
+
+  # ── Remote access ───────────────────────────────────────────────────────
+  rustdesk:
+    path: ./rustdesk
+
+  # ── Observability ───────────────────────────────────────────────────────
+  prometheus:
+    path: ./prometheus
+  loki:
+    path: ./loki
+  grafana:
+    path: ./grafana
+  grafana-oncall:
+    path: ./grafana-oncall
+
+  # ── Analytics ───────────────────────────────────────────────────────────
+  posthog:
+    path: ./posthog
+
+tasks:
+  # ── Bring up all services (default env) ────────────────────────────────
+  up:
+    desc: "Start all homelab services (default env)"
+    uses: shell
+    run: |
+      cast @setup up
+      cast @traefik up
+      cast @caddy up
+      cast @coredns up
+      cast @postgres up
+      cast @redis up
+      cast @mssql up
+      cast @mysql up
+      cast @rabbitmq up
+      cast @vault up
+      cast @consul up
+      cast @etcd up
+      cast @vaultwarden up
+      cast @dashy up
+      cast @wireguard up
+      cast @defguard up
+      cast @headscale up
+      cast @pangolin up
+      cast @code-server up
+      cast @gitea up
+      cast @n8n up
+      cast @windmill up
+      cast @temporal up
+      cast @kestra up
+      cast @rustfs up
+      cast @filerun up
+      cast @rustdesk up
+      cast @prometheus up
+      cast @loki up
+      cast @grafana up
+      cast @grafana-oncall up
+      cast @posthog up
+
+  # ── Tear down all services (default env) ───────────────────────────────
+  down:
+    desc: "Stop all homelab services (default env)"
+    uses: shell
+    run: |
+      cast @posthog down
+      cast @grafana-oncall down
+      cast @grafana down
+      cast @loki down
+      cast @prometheus down
+      cast @rustdesk down
+      cast @filerun down
+      cast @rustfs down
+      cast @kestra down
+      cast @temporal down
+      cast @windmill down
+      cast @n8n down
+      cast @gitea down
+      cast @code-server down
+      cast @pangolin down
+      cast @headscale down
+      cast @defguard down
+      cast @wireguard down
+      cast @dashy down
+      cast @vaultwarden down
+      cast @etcd down
+      cast @consul down
+      cast @vault down
+      cast @rabbitmq down
+      cast @mysql down
+      cast @mssql down
+      cast @redis down
+      cast @postgres down
+      cast @coredns down
+      cast @caddy down
+      cast @traefik down
+
+  # ── Production ─────────────────────────────────────────────────────────
+  up:prod:
+    desc: "Start all homelab services (prod env)"
+    uses: shell
+    run: |
+      cast @setup up
+      cast @traefik up:prod
+      cast @caddy up:prod
+      cast @coredns up:prod
+      cast @postgres up:prod
+      cast @redis up:prod
+      cast @mssql up:prod
+      cast @mysql up:prod
+      cast @rabbitmq up:prod
+      cast @vault up:prod
+      cast @consul up:prod
+      cast @etcd up:prod
+      cast @vaultwarden up:prod
+      cast @dashy up:prod
+      cast @wireguard up:prod
+      cast @defguard up:prod
+      cast @headscale up:prod
+      cast @pangolin up:prod
+      cast @code-server up:prod
+      cast @gitea up:prod
+      cast @n8n up:prod
+      cast @windmill up:prod
+      cast @temporal up:prod
+      cast @kestra up:prod
+      cast @rustfs up:prod
+      cast @filerun up:prod
+      cast @rustdesk up:prod
+      cast @prometheus up:prod
+      cast @loki up:prod
+      cast @grafana up:prod
+      cast @grafana-oncall up:prod
+      cast @posthog up:prod
+
+  down:prod:
+    desc: "Stop all homelab services (prod env)"
+    uses: shell
+    run: |
+      cast @posthog down:prod
+      cast @grafana-oncall down:prod
+      cast @grafana down:prod
+      cast @loki down:prod
+      cast @prometheus down:prod
+      cast @rustdesk down:prod
+      cast @filerun down:prod
+      cast @rustfs down:prod
+      cast @kestra down:prod
+      cast @temporal down:prod
+      cast @windmill down:prod
+      cast @n8n down:prod
+      cast @gitea down:prod
+      cast @code-server down:prod
+      cast @pangolin down:prod
+      cast @headscale down:prod
+      cast @defguard down:prod
+      cast @wireguard down:prod
+      cast @dashy down:prod
+      cast @vaultwarden down:prod
+      cast @etcd down:prod
+      cast @consul down:prod
+      cast @vault down:prod
+      cast @rabbitmq down:prod
+      cast @mysql down:prod
+      cast @mssql down:prod
+      cast @redis down:prod
+      cast @postgres down:prod
+      cast @coredns down:prod
+      cast @caddy down:prod
+      cast @traefik down:prod
+
+  # ── Test / staging ─────────────────────────────────────────────────────
+  up:test:
+    desc: "Start all homelab services (test env)"
+    uses: shell
+    run: |
+      cast @setup up
+      cast @traefik up:test
+      cast @caddy up:test
+      cast @coredns up:test
+      cast @postgres up:test
+      cast @redis up:test
+      cast @mssql up:test
+      cast @mysql up:test
+      cast @rabbitmq up:test
+      cast @vault up:test
+      cast @consul up:test
+      cast @etcd up:test
+      cast @vaultwarden up:test
+      cast @dashy up:test
+      cast @wireguard up:test
+      cast @defguard up:test
+      cast @headscale up:test
+      cast @pangolin up:test
+      cast @code-server up:test
+      cast @gitea up:test
+      cast @n8n up:test
+      cast @windmill up:test
+      cast @temporal up:test
+      cast @kestra up:test
+      cast @rustfs up:test
+      cast @filerun up:test
+      cast @rustdesk up:test
+      cast @prometheus up:test
+      cast @loki up:test
+      cast @grafana up:test
+      cast @grafana-oncall up:test
+      cast @posthog up:test
+
+  down:test:
+    desc: "Stop all homelab services (test env)"
+    uses: shell
+    run: |
+      cast @posthog down:test
+      cast @grafana-oncall down:test
+      cast @grafana down:test
+      cast @loki down:test
+      cast @prometheus down:test
+      cast @rustdesk down:test
+      cast @filerun down:test
+      cast @rustfs down:test
+      cast @kestra down:test
+      cast @temporal down:test
+      cast @windmill down:test
+      cast @n8n down:test
+      cast @gitea down:test
+      cast @code-server down:test
+      cast @pangolin down:test
+      cast @headscale down:test
+      cast @defguard down:test
+      cast @wireguard down:test
+      cast @dashy down:test
+      cast @vaultwarden down:test
+      cast @etcd down:test
+      cast @consul down:test
+      cast @vault down:test
+      cast @rabbitmq down:test
+      cast @mysql down:test
+      cast @mssql down:test
+      cast @redis down:test
+      cast @postgres down:test
+      cast @coredns down:test
+      cast @caddy down:test
+      cast @traefik down:test

@@ -1,0 +1,22 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "caddy"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold caddy config dir into .mnt"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/etc/caddy
+      mkdir -p ${MNT_DIR}/data/caddy
+      if [ ! -f "${MNT_DIR}/etc/caddy/Caddyfile" ] && [ -f "./default/etc/Caddyfile" ]; then
+        cp ./default/etc/Caddyfile ${MNT_DIR}/etc/caddy/Caddyfile
+        echo "Copied Caddyfile to ${MNT_DIR}/etc/caddy/"
+      fi
