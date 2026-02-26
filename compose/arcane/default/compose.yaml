@@ -1,0 +1,4 @@
+services:
+  arcane:
+    env_file:
+      - .env
