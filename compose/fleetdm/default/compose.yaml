@@ -1,0 +1,4 @@
+services:
+  fleetdm:
+    env_file:
+      - .env

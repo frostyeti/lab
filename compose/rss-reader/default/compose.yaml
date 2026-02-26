@@ -1,0 +1,4 @@
+services:
+  rss-reader:
+    env_file:
+      - .env

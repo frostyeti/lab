@@ -1,0 +1,4 @@
+services:
+  gatus:
+    env_file:
+      - .env

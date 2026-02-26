@@ -1,0 +1,4 @@
+services:
+  bind9:
+    env_file:
+      - .env

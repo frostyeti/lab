@@ -1,0 +1,4 @@
+services:
+  renovate:
+    env_file:
+      - .env

@@ -1,0 +1,4 @@
+services:
+  wazuh:
+    env_file:
+      - .env

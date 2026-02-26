@@ -1,0 +1,4 @@
+services:
+  secure-secret-share:
+    env_file:
+      - .env

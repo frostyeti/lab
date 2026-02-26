@@ -1,0 +1,43 @@
+services:
+  gitlab:
+    image: ${IMAGE_NAME:-gitlab/gitlab-ce}:${TAG:-latest}
+    container_name: gitlab
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost:8080'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        nginx['listen_port'] = 8080
+    ports:
+      - "8080:8080"
+      - "2222:22"
+    volumes:
+      - ${MNT_DIR}/config/gitlab:/etc/gitlab
+      - ${MNT_DIR}/data/gitlab/logs:/var/log/gitlab
+      - ${MNT_DIR}/data/gitlab/data:/var/opt/gitlab
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/users/sign_in"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 300s
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

@@ -1,0 +1,4 @@
+services:
+  greenbone-openvas:
+    env_file:
+      - .env

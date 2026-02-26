@@ -1,0 +1,4 @@
+services:
+  duin:
+    env_file:
+      - .env

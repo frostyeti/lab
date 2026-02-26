@@ -1,0 +1,4 @@
+services:
+  cadvisor:
+    env_file:
+      - .env

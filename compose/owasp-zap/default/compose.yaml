@@ -1,0 +1,4 @@
+services:
+  owasp-zap:
+    env_file:
+      - .env

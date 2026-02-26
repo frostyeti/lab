@@ -1,0 +1,37 @@
+services:
+  uptime-kuma:
+    image: ${IMAGE_NAME:-louislam/uptime-kuma}:${TAG:-1}
+    container_name: uptime-kuma
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "3001:3001"
+    volumes:
+      - ${MNT_DIR}/data/uptime-kuma:/data
+      - ${MNT_DIR}/config/uptime-kuma:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

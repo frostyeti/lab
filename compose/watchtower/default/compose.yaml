@@ -1,0 +1,4 @@
+services:
+  watchtower:
+    env_file:
+      - .env

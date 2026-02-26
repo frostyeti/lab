@@ -1,0 +1,4 @@
+services:
+  keycloak:
+    env_file:
+      - .env

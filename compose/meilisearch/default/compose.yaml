@@ -1,0 +1,4 @@
+services:
+  meilisearch:
+    env_file:
+      - .env

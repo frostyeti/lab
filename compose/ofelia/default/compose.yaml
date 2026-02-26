@@ -1,0 +1,4 @@
+services:
+  ofelia:
+    env_file:
+      - .env

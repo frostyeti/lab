@@ -1,0 +1,33 @@
+services:
+  fleetdm:
+    image: ${IMAGE_NAME:-fleetdm/fleet}:${TAG:-latest}
+    container_name: fleetdm
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "8080:8080"
+    command: ["fleet", "serve"]
+    volumes:
+      - ${MNT_DIR}/data/fleetdm:/data
+      - ${MNT_DIR}/config/fleetdm:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

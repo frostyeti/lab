@@ -1,0 +1,4 @@
+services:
+  sftpgo:
+    env_file:
+      - .env
