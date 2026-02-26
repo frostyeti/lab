@@ -1,0 +1,4 @@
+services:
+  docker-crontab:
+    env_file:
+      - .env

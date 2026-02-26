@@ -1,0 +1,4 @@
+services:
+  chrony:
+    env_file:
+      - .env

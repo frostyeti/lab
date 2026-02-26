@@ -1,0 +1,18 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "librechat"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold librechat config dir into .mnt"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/data/librechat
+      mkdir -p ${MNT_DIR}/config/librechat

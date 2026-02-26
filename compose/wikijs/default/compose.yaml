@@ -1,0 +1,4 @@
+services:
+  wikijs:
+    env_file:
+      - .env

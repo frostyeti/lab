@@ -1,0 +1,4 @@
+services:
+  zipkin:
+    env_file:
+      - .env

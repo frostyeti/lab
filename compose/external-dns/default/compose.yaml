@@ -1,0 +1,4 @@
+services:
+  external-dns:
+    env_file:
+      - .env

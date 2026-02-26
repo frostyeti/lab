@@ -1,0 +1,4 @@
+services:
+  defectdojo:
+    env_file:
+      - .env

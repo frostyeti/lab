@@ -1,0 +1,32 @@
+services:
+  ofelia:
+    image: ${IMAGE_NAME:-mcuadros/ofelia}:${TAG:-latest}
+    container_name: ofelia
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    command: ["daemon", "--config", "/etc/ofelia.conf"]
+    volumes:
+      - ${MNT_DIR}/data/ofelia:/data
+      - ${MNT_DIR}/config/ofelia:/config
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

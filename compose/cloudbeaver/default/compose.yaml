@@ -1,0 +1,4 @@
+services:
+  cloudbeaver:
+    env_file:
+      - .env

@@ -1,0 +1,4 @@
+services:
+  nessus:
+    env_file:
+      - .env

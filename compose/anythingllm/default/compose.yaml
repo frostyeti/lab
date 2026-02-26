@@ -1,0 +1,4 @@
+services:
+  anythingllm:
+    env_file:
+      - .env
