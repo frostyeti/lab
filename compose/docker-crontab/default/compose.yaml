@@ -1,4 +1,19 @@
 services:
   docker-crontab:
-    env_file:
-      - .env
+    image: ${IMAGE_NAME:-willfarrell/crontab}:${TAG:-latest}
+    container_name: docker-crontab
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    volumes:
+      - ${MNT_DIR}/etc/docker-crontab/config.json:/opt/crontab/config.json:ro
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

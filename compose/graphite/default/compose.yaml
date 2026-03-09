@@ -1,4 +1,23 @@
 services:
   graphite:
-    env_file:
-      - .env
+    image: ${IMAGE_NAME:-graphiteapp/graphite-statsd}:${TAG:-latest}
+    container_name: graphite
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    ports:
+      - "80:80"
+      - "2003:2003"
+      - "2004:2004"
+    volumes:
+      - ${MNT_DIR}/data/graphite:/data
+      - ${MNT_DIR}/config/graphite:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

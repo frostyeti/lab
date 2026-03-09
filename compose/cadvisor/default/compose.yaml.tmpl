@@ -17,9 +17,9 @@ services:
       - "/var/run:/var/run:ro"
       - "/sys:/sys:ro"
       - "/var/lib/docker/:/var/lib/docker:ro"
-      - "/dev/disk/:/dev/disk:ro"
+      # - "/dev/disk/:/dev/disk:ro"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/healthz"]
       interval: 30s
       timeout: 10s
       retries: 5

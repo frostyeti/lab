@@ -11,12 +11,7 @@ services:
       - "8080:8080"
     volumes:
       - ${MNT_DIR}/data/gatus:/data
-      - ${MNT_DIR}/config/gatus:/config
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - ${MNT_DIR}/etc/gatus:/config
     networks:
       - vnet-frontend
       - vnet-backend

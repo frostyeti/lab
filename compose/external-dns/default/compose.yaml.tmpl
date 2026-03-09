@@ -1,13 +1,13 @@
 services:
   external-dns:
-    image: ${IMAGE_NAME:-registry.k8s.io/external-dns/external-dns}:${TAG:-latest}
+    image: ${IMAGE_NAME:-registry.k8s.io/external-dns/external-dns}:${TAG:-v0.14.0}
     container_name: external-dns
     {{- if ne .env.DEPLOY_MODE "swarm" }}
     restart: unless-stopped
     {{- end }}
     environment:
       - TZ=UTC
-    command: ["--source=crd", "--provider=inmemory"]
+    command: ["--source=fake", "--provider=inmemory"]
     volumes:
       - ${MNT_DIR}/data/external-dns:/data
       - ${MNT_DIR}/config/external-dns:/config

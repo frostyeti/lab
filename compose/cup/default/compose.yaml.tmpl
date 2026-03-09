@@ -1,6 +1,7 @@
 services:
   cup:
-    image: ${IMAGE_NAME:-cup/cup}:${TAG:-latest}
+    # TODO: Replace with the actual image for CUP (Container Update Platform)
+    image: ${IMAGE_NAME:-nginx:alpine}
     container_name: cup
     {{- if ne .env.DEPLOY_MODE "swarm" }}
     restart: unless-stopped

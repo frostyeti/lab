@@ -1,4 +1,21 @@
 services:
   defectdojo:
-    env_file:
-      - .env
+    image: ${IMAGE_NAME:-defectdojo/defectdojo-django}:${TAG:-latest}
+    container_name: defectdojo
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${MNT_DIR}/data/defectdojo:/data
+      - ${MNT_DIR}/config/defectdojo:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

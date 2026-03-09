@@ -7,6 +7,14 @@ services:
     {{- end }}
     environment:
       - TZ=UTC
+      - DIUN_PROVIDERS_DOCKER=true
+      - DIUN_WATCH_SCHEDULE=0 * * * *
+    healthcheck:
+      test: ["CMD", "diun", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     volumes:
       - ${MNT_DIR}/data/duin:/data
       - ${MNT_DIR}/config/duin:/config

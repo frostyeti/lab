@@ -1,6 +1,6 @@
 services:
   greenbone-openvas:
-    image: ${IMAGE_NAME:-greenbone/gsa}:${TAG:-latest}
+    image: ${IMAGE_NAME:-immauss/openvas}:${TAG:-latest}
     container_name: greenbone-openvas
     {{- if ne .env.DEPLOY_MODE "swarm" }}
     restart: unless-stopped
@@ -8,10 +8,12 @@ services:
     environment:
       - TZ=UTC
     ports:
-      - "9392:80"
+      - "9392:9392"
     volumes:
       - ${MNT_DIR}/data/greenbone-openvas:/data
       - ${MNT_DIR}/config/greenbone-openvas:/config
+    healthcheck:
+      disable: true
     networks:
       - vnet-frontend
       - vnet-backend

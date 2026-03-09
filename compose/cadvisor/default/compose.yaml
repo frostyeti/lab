@@ -1,4 +1,32 @@
 services:
   cadvisor:
-    env_file:
-      - .env
+    image: ${IMAGE_NAME:-gcr.io/cadvisor/cadvisor}:${TAG:-latest}
+    container_name: cadvisor
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${MNT_DIR}/data/cadvisor:/data
+      - ${MNT_DIR}/config/cadvisor:/config
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+      # - "/dev/disk/:/dev/disk:ro"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

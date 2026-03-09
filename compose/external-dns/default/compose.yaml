@@ -1,4 +1,20 @@
 services:
   external-dns:
-    env_file:
-      - .env
+    image: ${IMAGE_NAME:-registry.k8s.io/external-dns/external-dns}:${TAG:-v0.14.0}
+    container_name: external-dns
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    command: ["--source=fake", "--provider=inmemory"]
+    volumes:
+      - ${MNT_DIR}/data/external-dns:/data
+      - ${MNT_DIR}/config/external-dns:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

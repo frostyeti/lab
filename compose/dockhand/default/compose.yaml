@@ -1,4 +1,20 @@
 services:
   dockhand:
-    env_file:
-      - .env
+    image: ${IMAGE_NAME:-fnsys/dockhand}:${TAG:-latest}
+    container_name: dockhand
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    volumes:
+      - ${MNT_DIR}/data/dockhand:/data
+      - ${MNT_DIR}/config/dockhand:/config
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

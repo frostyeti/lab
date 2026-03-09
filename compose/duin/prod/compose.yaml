@@ -1,0 +1,34 @@
+services:
+  duin:
+    image: ${IMAGE_NAME:-crazymax/diun}:${TAG:-latest}
+    container_name: duin
+    environment:
+      - TZ=UTC
+      - DIUN_PROVIDERS_DOCKER=true
+      - DIUN_WATCH_SCHEDULE=0 * * * *
+    healthcheck:
+      test: ["CMD", "diun", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    volumes:
+      - ${MNT_DIR}/data/duin:/data
+      - ${MNT_DIR}/config/duin:/config
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

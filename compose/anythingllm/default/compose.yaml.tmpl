@@ -7,11 +7,11 @@ services:
     {{- end }}
     environment:
       - TZ=UTC
+      - STORAGE_DIR=/app/server/storage
     ports:
       - "3001:3001"
     volumes:
-      - ${MNT_DIR}/data/anythingllm:/data
-      - ${MNT_DIR}/config/anythingllm:/config
+      - ${MNT_DIR}/data/anythingllm:/app/server/storage
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/ping"]
       interval: 30s

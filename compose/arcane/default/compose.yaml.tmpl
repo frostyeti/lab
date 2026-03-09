@@ -1,6 +1,7 @@
 services:
   arcane:
-    image: ${IMAGE_NAME:-ghcr.io/arcane-app/arcane}:${TAG:-latest}
+    # TODO: Replace with the actual image for Arcane (https://getarcane.app/)
+    image: ${IMAGE_NAME:-nginx:alpine}
     container_name: arcane
     {{- if ne .env.DEPLOY_MODE "swarm" }}
     restart: unless-stopped

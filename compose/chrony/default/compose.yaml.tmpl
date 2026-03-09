@@ -12,6 +12,12 @@ services:
     volumes:
       - ${MNT_DIR}/data/chrony:/data
       - ${MNT_DIR}/config/chrony:/config
+    healthcheck:
+      test: ["CMD", "chronyc", "-n", "tracking"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     networks:
       - vnet-frontend
       - vnet-backend
