@@ -1,0 +1,22 @@
+services:
+  arcane:
+    # TODO: Replace with the actual image for Arcane (https://getarcane.app/)
+    image: ${IMAGE_NAME:-nginx:alpine}
+    container_name: arcane
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${MNT_DIR}/data/arcane:/data
+      - ${MNT_DIR}/config/arcane:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

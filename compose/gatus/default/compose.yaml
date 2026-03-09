@@ -1,0 +1,21 @@
+services:
+  gatus:
+    image: ${IMAGE_NAME:-twinproduction/gatus}:${TAG:-latest}
+    container_name: gatus
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${MNT_DIR}/data/gatus:/data
+      - ${MNT_DIR}/etc/gatus:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

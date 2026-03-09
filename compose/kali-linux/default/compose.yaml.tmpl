@@ -1,0 +1,32 @@
+services:
+  kali-linux:
+    image: ${IMAGE_NAME:-kasmweb/kali-rolling-desktop}:${TAG:-latest}
+    container_name: kali-linux
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "6901:6901"
+    volumes:
+      - ${MNT_DIR}/data/kali-linux:/data
+      - ${MNT_DIR}/config/kali-linux:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

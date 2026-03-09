@@ -1,0 +1,7 @@
+endpoints:
+  - name: website
+    group: core
+    url: "https://google.com"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"

@@ -1,0 +1,34 @@
+services:
+  greenbone-openvas:
+    image: ${IMAGE_NAME:-immauss/openvas}:${TAG:-latest}
+    container_name: greenbone-openvas
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "9392:9392"
+    volumes:
+      - ${MNT_DIR}/data/greenbone-openvas:/data
+      - ${MNT_DIR}/config/greenbone-openvas:/config
+    healthcheck:
+      disable: true
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

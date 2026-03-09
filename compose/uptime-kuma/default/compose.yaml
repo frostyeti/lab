@@ -1,0 +1,4 @@
+services:
+  uptime-kuma:
+    env_file:
+      - .env

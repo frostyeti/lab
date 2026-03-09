@@ -1,0 +1,4 @@
+services:
+  vigil:
+    env_file:
+      - .env

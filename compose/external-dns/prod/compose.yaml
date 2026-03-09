@@ -1,0 +1,26 @@
+services:
+  external-dns:
+    image: ${IMAGE_NAME:-registry.k8s.io/external-dns/external-dns}:${TAG:-v0.14.0}
+    container_name: external-dns
+    environment:
+      - TZ=UTC
+    command: ["--source=fake", "--provider=inmemory"]
+    volumes:
+      - ${MNT_DIR}/data/external-dns:/data
+      - ${MNT_DIR}/config/external-dns:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

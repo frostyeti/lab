@@ -1,0 +1,33 @@
+services:
+  wazuh:
+    image: ${IMAGE_NAME:-wazuh/wazuh-manager}:${TAG:-4.7.2}
+    container_name: wazuh
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "1514:1514"
+      - "55000:55000"
+    volumes:
+      - ${MNT_DIR}/data/wazuh:/data
+      - ${MNT_DIR}/config/wazuh:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

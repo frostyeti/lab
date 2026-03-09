@@ -1,0 +1,4 @@
+services:
+  kali-linux:
+    env_file:
+      - .env

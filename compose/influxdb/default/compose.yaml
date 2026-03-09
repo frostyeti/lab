@@ -1,0 +1,4 @@
+services:
+  influxdb:
+    env_file:
+      - .env

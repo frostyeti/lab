@@ -1,0 +1,33 @@
+services:
+  tugtainer:
+    image: ${IMAGE_NAME:-quenary/tugtainer}:${TAG:-latest}
+    container_name: tugtainer
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${MNT_DIR}/data/tugtainer:/data
+      - ${MNT_DIR}/config/tugtainer:/config
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

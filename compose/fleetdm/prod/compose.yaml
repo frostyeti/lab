@@ -1,0 +1,28 @@
+services:
+  fleetdm:
+    image: ${IMAGE_NAME:-fleetdm/fleet}:${TAG:-latest}
+    container_name: fleetdm
+    environment:
+      - TZ=UTC
+    ports:
+      - "8080:8080"
+    command: ["fleet", "serve"]
+    volumes:
+      - ${MNT_DIR}/data/fleetdm:/data
+      - ${MNT_DIR}/config/fleetdm:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

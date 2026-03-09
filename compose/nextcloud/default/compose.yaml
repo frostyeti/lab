@@ -1,0 +1,4 @@
+services:
+  nextcloud:
+    env_file:
+      - .env

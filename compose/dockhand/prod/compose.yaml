@@ -1,0 +1,26 @@
+services:
+  dockhand:
+    image: ${IMAGE_NAME:-fnsys/dockhand}:${TAG:-latest}
+    container_name: dockhand
+    environment:
+      - TZ=UTC
+    volumes:
+      - ${MNT_DIR}/data/dockhand:/data
+      - ${MNT_DIR}/config/dockhand:/config
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

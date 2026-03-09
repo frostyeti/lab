@@ -1,0 +1,26 @@
+services:
+  home-assistant:
+    image: ${IMAGE_NAME:-lscr.io/linuxserver/homeassistant}:${TAG:-latest}
+    container_name: home-assistant
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    ports:
+      - "8123:8123"
+    volumes:
+      - ${MNT_DIR}/data/home-assistant:/data
+      - ${MNT_DIR}/config/home-assistant:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

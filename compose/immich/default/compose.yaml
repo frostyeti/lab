@@ -1,0 +1,4 @@
+services:
+  immich:
+    env_file:
+      - .env

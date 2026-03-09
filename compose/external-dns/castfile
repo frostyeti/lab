@@ -1,0 +1,18 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "external-dns"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold external-dns config dir into .mnt"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/data/external-dns
+      mkdir -p ${MNT_DIR}/config/external-dns

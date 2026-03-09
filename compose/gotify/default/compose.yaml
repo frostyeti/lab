@@ -1,0 +1,26 @@
+services:
+  gotify:
+    image: ${IMAGE_NAME:-gotify/server}:${TAG:-latest}
+    container_name: gotify
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    ports:
+      - "8081:80"
+    volumes:
+      - ${MNT_DIR}/data/gotify:/data
+      - ${MNT_DIR}/config/gotify:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

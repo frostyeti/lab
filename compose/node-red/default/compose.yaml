@@ -1,0 +1,4 @@
+services:
+  node-red:
+    env_file:
+      - .env

@@ -1,0 +1,4 @@
+services:
+  peekaping:
+    env_file:
+      - .env

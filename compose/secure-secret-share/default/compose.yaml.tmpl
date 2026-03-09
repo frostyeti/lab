@@ -1,0 +1,37 @@
+services:
+  secure-secret-share:
+    image: ${IMAGE_NAME:-jhaals/yopass}:${TAG:-latest}
+    container_name: secure-secret-share
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "1337:1337"
+    volumes:
+      - ${MNT_DIR}/data/secure-secret-share:/data
+      - ${MNT_DIR}/config/secure-secret-share:/config
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:1337"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

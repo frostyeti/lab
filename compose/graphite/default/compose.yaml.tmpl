@@ -1,0 +1,34 @@
+services:
+  graphite:
+    image: ${IMAGE_NAME:-graphiteapp/graphite-statsd}:${TAG:-latest}
+    container_name: graphite
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "80:80"
+      - "2003:2003"
+      - "2004:2004"
+    volumes:
+      - ${MNT_DIR}/data/graphite:/data
+      - ${MNT_DIR}/config/graphite:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

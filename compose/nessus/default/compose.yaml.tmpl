@@ -1,0 +1,32 @@
+services:
+  nessus:
+    image: ${IMAGE_NAME:-tenableofficial/nessus}:${TAG:-latest}
+    container_name: nessus
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    ports:
+      - "8834:8834"
+    volumes:
+      - ${MNT_DIR}/data/nessus:/data
+      - ${MNT_DIR}/config/nessus:/config
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

@@ -1,0 +1,3 @@
+services:
+  gitlab:
+    ports: !reset []

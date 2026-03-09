@@ -1,0 +1,19 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "gitlab"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold gitlab config dir into .mnt"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/data/gitlab/logs
+      mkdir -p ${MNT_DIR}/data/gitlab/data
+      mkdir -p ${MNT_DIR}/config/gitlab

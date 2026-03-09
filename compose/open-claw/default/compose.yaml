@@ -1,0 +1,4 @@
+services:
+  open-claw:
+    env_file:
+      - .env

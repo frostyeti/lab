@@ -1,0 +1,4 @@
+services:
+  tugtainer:
+    env_file:
+      - .env

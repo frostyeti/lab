@@ -1,0 +1,51 @@
+services:
+  postgresql:
+    image: docker.io/library/postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=authentik
+      - POSTGRES_USER=authentik
+      - POSTGRES_DB=authentik
+    volumes:
+      - ${MNT_DIR}/data/authentik/db:/var/lib/postgresql/data
+    networks:
+      - vnet-backend
+
+  redis:
+    image: docker.io/library/redis:alpine
+    restart: unless-stopped
+    volumes:
+      - ${MNT_DIR}/data/authentik/redis:/data
+    networks:
+      - vnet-backend
+
+  authentik:
+    image: ${IMAGE_NAME:-ghcr.io/goauthentik/server}:${TAG:-latest}
+    container_name: authentik
+    restart: unless-stopped
+    depends_on:
+      - postgresql
+      - redis
+    command: server
+    environment:
+      - TZ=UTC
+      - AUTHENTIK_REDIS__HOST=redis
+      - AUTHENTIK_POSTGRESQL__HOST=postgresql
+      - AUTHENTIK_POSTGRESQL__USER=authentik
+      - AUTHENTIK_POSTGRESQL__NAME=authentik
+      - AUTHENTIK_POSTGRESQL__PASSWORD=authentik
+      - AUTHENTIK_SECRET_KEY=testkey1234567890
+    ports:
+      - "9000:9000"
+    volumes:
+      - ${MNT_DIR}/data/authentik/media:/media
+      - ${MNT_DIR}/data/authentik/templates:/templates
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

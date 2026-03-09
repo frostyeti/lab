@@ -1,0 +1,18 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "node-red"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold node-red config dir into .mnt"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/data/node-red
+      mkdir -p ${MNT_DIR}/config/node-red

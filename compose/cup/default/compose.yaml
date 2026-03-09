@@ -1,0 +1,4 @@
+services:
+  cup:
+    env_file:
+      - .env

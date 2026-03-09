@@ -1,0 +1,23 @@
+services:
+  greenbone-openvas:
+    image: ${IMAGE_NAME:-immauss/openvas}:${TAG:-latest}
+    container_name: greenbone-openvas
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    ports:
+      - "9392:9392"
+    volumes:
+      - ${MNT_DIR}/data/greenbone-openvas:/data
+      - ${MNT_DIR}/config/greenbone-openvas:/config
+    healthcheck:
+      disable: true
+    networks:
+      - vnet-frontend
+      - vnet-backend
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

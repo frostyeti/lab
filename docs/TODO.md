@@ -59,6 +59,19 @@ This document contains a curated list of Docker Compose applications that are hi
 - **Pastebins (e.g., Hastebin / Microbin / Pastefy)**: Open-source text and code-snippet sharing.
 - **RSS Reader (e.g., FreshRSS / Miniflux)**: Self-hosted RSS feed readers for staying up-to-date with news and blogs.
 
+## Source Control & CI/CD
+- **GitLab**: Web-based DevOps lifecycle tool that provides a Git-repository manager providing wiki, issue-tracking and CI/CD pipeline features.
+- **Renovate**: Automated dependency updates.
+
+## Container Management & Automation
+- **Portainer**: UI for managing Docker and Kubernetes.
+- **Watchtower (nicholas-fedor/watchtower)**: Automated update of Docker container base images.
+- **Tugtainer**: Docker container update/management tool.
+- **Diun (Duin)**: Docker Image Update Notifier.
+- **Dockhand**: Docker operations and management.
+- **Arcane**: Container and server management platform (https://getarcane.app/).
+- **Cup**: Container Update Platform.
+
 ## Security Scanning & Pen-Testing
 - **Greenbone / OpenVAS**: Open-source vulnerability scanning and management system.
 - **DefectDojo**: Open-source vulnerability management tool that streamlines the testing process.

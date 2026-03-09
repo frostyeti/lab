@@ -1,0 +1,18 @@
+imports:
+  - docker
+
+env:
+  MNT_DIR: "${MNT_DIR:-../../.mnt}"
+  SERVICE_NAME: "uptime-kuma"
+
+inventories:
+  - ./prod-inventory.yaml
+  - ./test-inventory.yaml
+
+tasks:
+  up:before:
+    desc: "Scaffold uptime-kuma config dir into .mnt"
+    uses: bash
+    run: |
+      mkdir -p ${MNT_DIR}/data/uptime-kuma
+      mkdir -p ${MNT_DIR}/config/uptime-kuma

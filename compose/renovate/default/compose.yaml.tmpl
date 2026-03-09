@@ -1,0 +1,31 @@
+services:
+  renovate:
+    image: ${IMAGE_NAME:-renovate/renovate}:${TAG:-latest}
+    container_name: renovate
+    {{- if ne .env.DEPLOY_MODE "swarm" }}
+    restart: unless-stopped
+    {{- end }}
+    environment:
+      - TZ=UTC
+    volumes:
+      - ${MNT_DIR}/data/renovate:/data
+      - ${MNT_DIR}/config/renovate:/config
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - vnet-frontend
+      - vnet-backend
+    {{- if eq .env.DEPLOY_MODE "swarm" }}
+    deploy:
+      mode: replicated
+      replicas: {{ default "1" .data.replicas }}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    {{- end }}
+
+networks:
+  vnet-frontend:
+    external: true
+  vnet-backend:
+    external: true

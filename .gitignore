@@ -2,6 +2,9 @@
 compose/.mnt/
 **/.mnt/
 
+*.log
+*.log.*
+
 # User overrides for .env files (personal settings, never commit)
 **/.env.user
 

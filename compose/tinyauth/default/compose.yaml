@@ -1,0 +1,4 @@
+services:
+  tinyauth:
+    env_file:
+      - .env
